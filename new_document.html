@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeFi Trading Suite</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #1a1a1a; color: #ffffff; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .main-title { font-size: 2.5rem; font-weight: bold; background: linear-gradient(45deg, #00d4ff, #9c40ff); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+        .subtitle { color: #888; font-size: 1rem; margin-bottom: 20px; }
+        .nav-pills { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
+        .nav-pill { padding: 10px 20px; background: #333; border: 1px solid #555; color: #ffffff; cursor: pointer; transition: all 0.2s ease; }
+        .nav-pill.active { background: #0066ff; border-color: #0066ff; }
+        .calculator-container { display: none; max-width: 1000px; margin: 0 auto; }
+        .calculator-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .input-section, .results-section { background: #2a2a2a; border: 1px solid #444; padding: 20px; }
+        .section-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 20px; color: #00d4ff; }
+        .input-group { margin-bottom: 15px; }
+        .input-label { display: block; margin-bottom: 5px; color: #ccc; font-size: 0.9rem; }
+        .input-field, .select-field { width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #555; color: #ffffff; font-size: 14px; }
+        .input-field:focus, .select-field:focus { outline: none; border-color: #00d4ff; }
+        .toggle-group { display: flex; gap: 5px; }
+        .toggle-btn { flex: 1; padding: 8px; background: #333; border: 1px solid #555; color: #ffffff; cursor: pointer; text-align: center; font-size: 0.9rem; }
+        .toggle-btn.active { background: #0066ff; border-color: #0066ff; }
+        .result-card { background: #333; border: 1px solid #555; padding: 15px; margin-bottom: 10px; }
+        .result-title { font-size: 0.85rem; color: #aaa; margin-bottom: 5px; }
+        .result-value { font-size: 1.1rem; font-weight: bold; color: #ffffff; }
+        .positive { color: #22c55e; }
+        .negative { color: #ef4444; }
+        .warning { color: #f59e0b; }
+        .trade-btn { width: 100%; padding: 12px; border: none; color: #ffffff; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .trade-btn.long { background: #22c55e; }
+        .trade-btn.short { background: #ef4444; }
+        .apps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .app-card { background: #2a2a2a; border: 1px solid #444; padding: 25px; cursor: pointer; transition: all 0.2s ease; }
+        .app-card:hover { background: #333; border-color: #666; }
+        .app-icon { font-size: 2rem; margin-bottom: 15px; }
+        .app-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 8px; }
+        .app-description { color: #aaa; font-size: 0.9rem; margin-bottom: 12px; }
+        .app-status { padding: 4px 10px; font-size: 0.75rem; font-weight: bold; }
+        .status-active { background: #22c55e; color: #000; }
+        .status-coming { background: #f97316; color: #000; }
+        @media (max-width: 768px) { .calculator-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="main-title">DeFi Trading Suite</h1>
+            <p class="subtitle">Professional decentralized trading tools</p>
+            <div class="nav-pills">
+                <div class="nav-pill active" onclick="showApps()">🏠 Dashboard</div>
+                <div class="nav-pill" onclick="showCalculator()">📊 TP/SL Calculator</div>
+            </div>
+        </div>
+
+        <div id="apps-view">
+            <div class="apps-grid">
+                <div class="app-card" onclick="showCalculator()">
+                    <div class="app-icon" style="color: #00d4ff;">📊</div>
+                    <div class="app-title">TP/SL Calculator</div>
+                    <div class="app-description">Calculate take profit, stop loss and commissions with Binance fees.</div>
+                    <div class="app-status status-active">Active</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="calculator-view" class="calculator-container">
+            <div class="calculator-grid">
+                <div class="input-section">
+                    <h2 class="section-title">⚙️ Trading Setup</h2>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center;">
+                        <div style="background: #333; padding: 6px 12px; font-size: 0.85rem; border: 1px solid #555;">Isolated</div>
+                        <select id="leverageSelect" class="select-field" style="flex: 0 0 70px; font-size: 0.85rem; padding: 6px;">
+                            <option value="10">10x</option>
+                            <option value="20" selected>20x</option>
+                            <option value="50">50x</option>
+                            <option value="75">75x</option>
+                            <option value="100">100x</option>
+                        </select>
+                        <div class="toggle-group" style="flex: 1; margin: 0;">
+                            <div class="toggle-btn active" id="shortButton" onclick="setPositionType('short')" style="background: #ef4444; border-color: #ef4444;">S</div>
+                            <div class="toggle-btn" id="longButton" onclick="setPositionType('long')">L</div>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Entry Price (USDT)</label>
+                        <input type="number" id="entryPriceInput" class="input-field" value="4636.90" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Trade Amount (USDT)</label>
+                        <input type="number" id="tradeAmountInput" class="input-field" value="1000" step="0.01">
+                    </div>
+                    <div style="border: 1px solid #555; padding: 15px; margin-bottom: 15px; background: #333;">
+                        <div style="margin-bottom: 10px; font-size: 0.9rem; font-weight: bold;">TP/SL</div>
+                        <div class="input-group">
+                            <label class="input-label">Take Profit</label>
+                            <input type="number" id="takeProfitInput" class="input-field" value="4800.00" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Stop Loss</label>
+                            <input type="number" id="stopLossInput" class="input-field" value="4500.00" step="0.01">
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="trade-btn long" id="longTradeButton" onclick="executeTrade('long')" style="opacity: 0.3;">Buy/Long</button>
+                        <button class="trade-btn short" id="shortTradeButton" onclick="executeTrade('short')">Sell/Short</button>
+                    </div>
+                </div>
+
+                <div class="results-section">
+                    <h2 class="section-title">📊 Results</h2>
+                    <div class="result-card"><div class="result-title">Position Size</div><div class="result-value" id="positionSizeResult">-</div></div>
+                    <div class="result-card"><div class="result-title">Margin Required</div><div class="result-value" id="marginResult">-</div></div>
+                    <div class="result-card"><div class="result-title">Entry Fee</div><div class="result-value" id="entryFeeResult">-</div></div>
+                    <div class="result-card"><div class="result-title">Liquidation Price</div><div class="result-value warning" id="liquidationResult">-</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+let currentPositionType = 'short';
+const fees = { taker: 0.0010 };
+const maintenanceMarginRate = 0.005;
+
+function showApps(){document.getElementById('apps-view').style.display='block';document.getElementById('calculator-view').style.display='none';}
+function showCalculator(){document.getElementById('apps-view').style.display='none';document.getElementById('calculator-view').style.display='block';}
+function setPositionType(type){currentPositionType=type;document.getElementById('longButton').classList.toggle('active',type==='long');document.getElementById('shortButton').classList.toggle('active',type==='short');document.getElementById('longTradeButton').style.opacity=type==='long'?'1':'0.3';document.getElementById('shortTradeButton').style.opacity=type==='short'?'1':'0.3';calculateTrade();}
+
+function calculateTrade(){
+    const entryPrice=parseFloat(document.getElementById('entryPriceInput').value);
+    const tradeAmount=parseFloat(document.getElementById('tradeAmountInput').value);
+    const leverage=parseFloat(document.getElementById('leverageSelect').value);
+    if(!entryPrice||!tradeAmount||!leverage){return;}
+
+    const positionSize=tradeAmount;
+    const margin=positionSize/leverage;
+    const entryFee=positionSize*fees.taker;
+
+    // Nueva fórmula simplificada: liquida siempre en dirección correcta
+    let liquidationPrice;
+    if(currentPositionType==='long'){
+        liquidationPrice = entryPrice * (1 - (1/leverage) + maintenanceMarginRate);
+    } else {
+        liquidationPrice = entryPrice * (1 + (1/leverage) - maintenanceMarginRate);
+    }
+
+    updateResult('positionSizeResult',`$${positionSize.toFixed(2)}`);
+    updateResult('marginResult',`$${margin.toFixed(2)}`);
+    updateResult('entryFeeResult',`$${entryFee.toFixed(4)}`);
+    updateResult('liquidationResult',`${liquidationPrice.toFixed(2)}`);
+}
+
+function updateResult(id,val){document.getElementById(id).textContent=val;}
+function executeTrade(type){alert(`Simulating ${type==='long'?'BUY':'SELL'}`);}
+document.addEventListener('DOMContentLoaded',()=>{['entryPriceInput','tradeAmountInput','leverageSelect'].forEach(id=>{document.getElementById(id).addEventListener('input',calculateTrade);});calculateTrade();});
+</script>
+</body>
+</html>
